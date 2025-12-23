@@ -440,7 +440,7 @@ export default function AdminApplications() {
               <Sparkles className="w-96 h-96 text-indigo-400 animate-pulse" />
             </div>
             <h1 className="relative text-5xl lg:text-7xl font-extrabold bg-gradient-to-r from-slate-900 via-indigo-800 to-purple-900 bg-clip-text text-transparent mb-4">
-              Admin Nexus
+              Admin Dashboard
             </h1>
             <p className="text-xl text-slate-600">Next-Gen Application Management</p>
           </div>
