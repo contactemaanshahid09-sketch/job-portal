@@ -705,6 +705,11 @@ export default function ProfilePage() {
   const [resumePreviewUrl, setResumePreviewUrl] = useState(null);
   const [showResumeModal, setShowResumeModal] = useState(false);
 
+    // Resume Auto-fill
+  const [resumeSuggestions, setResumeSuggestions] = useState(null);
+  const [showAutofillModal, setShowAutofillModal] = useState(false);
+  
+
   const getFileType = (mimeType) => {
     if (!mimeType) return "document";
     if (mimeType.startsWith("image/")) return "image";
@@ -748,11 +753,11 @@ export default function ProfilePage() {
               setResumePreviewUrl(url);
             }
           } catch (e) {
-            console.error("Preview load error", e);
+            console.error("Preview load error - page.js:756", e);
           }
         }
       } catch (err) {
-        console.error("Profile load error", err);
+        console.error("Profile load error - page.js:760", err);
       } finally {
         setLoading(false);
       }
@@ -860,6 +865,84 @@ export default function ProfilePage() {
       alert("Delete failed");
     }
   };
+
+
+
+
+
+
+
+
+
+// page.js mein handleAutofillFromResume
+const handleAutofillFromResume = async () => {
+  try {
+    const res = await fetch("/api/profile/resume/parse", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: session.user.email }),
+    });
+
+    const data = await res.json();
+    console.log("🔍 FULL API RESPONSE: - page.js:887", data);  // Ye add karo!
+
+    if (res.ok && data.extracted) {
+      setResumeSuggestions(
+        Object.fromEntries(
+          Object.entries(data.extracted).map(([k, v]) => [k, { value: v, checked: true }])
+        )
+      );
+      setShowAutofillModal(true);
+    } else {
+      console.error("❌ API ERROR: - page.js:897", data);
+      alert(JSON.stringify(data, null, 2));  // Full error dikhao
+    }
+  } catch (err) {
+    alert("Network error: " + err.message);
+  }
+};
+
+
+
+const applyResumeAutofill = () => {
+  if (!resumeSuggestions) return;
+
+  Object.entries(resumeSuggestions).forEach(([key, obj]) => {
+    if (!obj.checked) return;
+
+    switch (key) {
+      case "about":
+        setAbout(obj.value);
+        break;
+
+      case "skills":
+        setSkillsText(Array.isArray(obj.value) ? obj.value.join(", ") : obj.value);
+        break;
+
+      case "education":
+        setEducation(Array.isArray(obj.value) ? obj.value : []);
+        break;
+
+      case "experience":
+        setExperience(Array.isArray(obj.value) ? obj.value : []);
+        break;
+
+      default:
+        break;
+    }
+  });
+
+  setShowAutofillModal(false);
+};
+
+
+
+
+
+
+
+
+
 
   // Dynamic list helpers (education, experience, accounts)
   const addEducation = () => setEducation([...education, { degree: "", institute: "", yearFrom: "", yearTo: "" }]);
@@ -1036,6 +1119,20 @@ export default function ProfilePage() {
                     <Trash2 className="w-5 h-5" />
                     Delete
                   </button>
+                  
+
+
+<button
+  onClick={handleAutofillFromResume}
+  disabled={!resumeMeta}
+  className="mt-4 w-full py-4 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold rounded-2xl shadow-xl hover:shadow-2xl disabled:opacity-50 transition-all"
+>
+   Auto-fill Profile from Resume
+</button>
+
+
+
+
                 </div>
               </div>
             </div>
@@ -1205,6 +1302,68 @@ export default function ProfilePage() {
           </div>
         </div>
       )}
+
+
+
+
+
+{showAutofillModal && resumeSuggestions && (
+  <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-6">
+    <div className="bg-white rounded-3xl max-w-xl w-full p-8 shadow-2xl">
+      <h3 className="text-2xl font-bold mb-6">
+        We found these details from your resume. Apply?
+      </h3>
+
+      <div className="space-y-4 max-h-80 overflow-auto">
+        {Object.entries(resumeSuggestions).map(([key, obj]) => (
+          <label key={key} className="flex items-start gap-3">
+            <input
+              type="checkbox"
+              checked={obj.checked}
+              onChange={(e) =>
+                setResumeSuggestions((prev) => ({
+                  ...prev,
+                  [key]: { ...prev[key], checked: e.target.checked },
+                }))
+              }
+              className="mt-1"
+            />
+            <div>
+              <p className="font-semibold capitalize">{key}</p>
+              <p className="text-sm text-slate-600">
+                {Array.isArray(obj.value)
+                  ? JSON.stringify(obj.value)
+                  : String(obj.value)}
+              </p>
+            </div>
+          </label>
+        ))}
+      </div>
+
+      <div className="flex justify-end gap-4 mt-8">
+        <button
+          onClick={() => setShowAutofillModal(false)}
+          className="px-6 py-3 rounded-xl border font-semibold"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={applyResumeAutofill}
+          className="px-6 py-3 rounded-xl bg-indigo-600 text-white font-bold"
+        >
+          Apply
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+
+
+
+
+
+
     </>
   );
 }

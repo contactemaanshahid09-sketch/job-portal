@@ -246,7 +246,7 @@ export default function PublicProfile() {
 
               {/* Action Buttons */}
               <div className="flex flex-col gap-3">
-                {isOwner ? (
+                {/* {isOwner ? (
                   <Link
                     href="/profile/edit"
                     className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold rounded-2xl shadow-xl hover:shadow-2xl transition-all flex items-center gap-3 whitespace-nowrap"
@@ -259,7 +259,25 @@ export default function PublicProfile() {
                     <MessageCircle className="w-5 h-5" />
                     Contact
                   </button>
-                )}
+                )} */}
+                {isOwner ? (
+  <Link
+    href="/profile/edit"
+    className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold rounded-2xl shadow-xl hover:shadow-2xl transition-all flex items-center gap-3 whitespace-nowrap"
+  >
+    <Edit3 className="w-5 h-5" />
+    Edit Profile
+  </Link>
+) : (
+  <Link
+    href={`/contact?userEmail=${encodeURIComponent(profile.email)}`}
+    className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold rounded-2xl shadow-xl hover:shadow-2xl transition-all flex items-center gap-3"
+  >
+    <MessageCircle className="w-5 h-5" />
+    Contact
+  </Link>
+)}
+
            
               </div>
             </div>
