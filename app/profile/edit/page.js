@@ -694,6 +694,29 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
+
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [phone, setPhone] = useState("");
+
+  const [selectedCountry, setSelectedCountry] = useState("PK"); // Default Pakistan
+  const [phoneNumber, setPhoneNumber] = useState(""); // Sirf numbers
+
+  // Countries list (top mein add karo)
+const countries = [
+  { code: "PK", name: "Pakistan", dial: "+92" },
+  { code: "US", name: "United States", dial: "+1" },
+  { code: "UK", name: "United Kingdom", dial: "+44" },
+  { code: "SA", name: "Saudi Arabia", dial: "+966" },
+  { code: "AE", name: "UAE", dial: "+971" },
+  { code: "CA", name: "Canada", dial: "+1" },
+  { code: "IN", name: "India", dial: "+91" },
+];
+
+// Phone validation
+const isValidPhone = (number) => /^\d{10,15}$/.test(number);
+
+  
   const [about, setAbout] = useState("");
   const [education, setEducation] = useState([]);
   const [experience, setExperience] = useState([]);
@@ -733,6 +756,30 @@ export default function ProfilePage() {
         const data = await res.json();
 
         setAbout(data.about || "");
+        
+        setFirstName(data.firstName || "");
+        setLastName(data.lastName || "");
+        // setPhone(data.phone || "");
+         // ✅ PHONE PARSE LOGIC - YE REPLACE KARO
+    if (data.phone) {
+      const phoneMatch = data.phone.match(/^\+(\d{1,4})\s?(.+)$/);
+      if (phoneMatch) {
+        const [, countryCode, number] = phoneMatch;
+        const country = countries.find(c => c.dial === `+${countryCode}`);
+        if (country) {
+          setSelectedCountry(country.code);
+          setPhoneNumber(number.trim());
+        } else {
+          setPhoneNumber(data.phone.replace(/\D/g, ""));
+        }
+      } else {
+        setPhoneNumber(data.phone.replace(/\D/g, ""));
+      }
+    } else {
+      setSelectedCountry("PK");
+      setPhoneNumber("");
+    }
+        
         setEducation(data.education || []);
         setExperience(data.experience || []);
         setSkillsText((data.skills || []).join(", "));
@@ -753,11 +800,11 @@ export default function ProfilePage() {
               setResumePreviewUrl(url);
             }
           } catch (e) {
-            console.error("Preview load error - page.js:756", e);
+            console.error("Preview load error - page.js:803", e);
           }
         }
       } catch (err) {
-        console.error("Profile load error - page.js:760", err);
+        console.error("Profile load error - page.js:807", err);
       } finally {
         setLoading(false);
       }
@@ -766,34 +813,88 @@ export default function ProfilePage() {
     fetchProfile();
   }, [status, router, session?.user?.email]);
 
-  // SAVE PROFILE
-  const handleSaveProfile = async () => {
-    if (!session?.user?.email) return;
-    try {
-      setSaving(true);
-      const payload = {
-        email: session.user.email,
-        about,
-        education,
-        experience,
-        skills: skillsText.split(",").map((s) => s.trim()).filter(Boolean),
-        accounts,
-      };
+  // // SAVE PROFILE
+  // const handleSaveProfile = async () => {
+  //   if (!session?.user?.email) return;
+  //   try {
+  //     setSaving(true);
+  //     const payload = {
+  //       email: session.user.email,
 
-      const res = await fetch("/api/profile", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+  //       firstName,
+  //       lastName,
+  //       phone,
+        
+  //       about,
+  //       education,
+  //       experience,
+  //       skills: skillsText.split(",").map((s) => s.trim()).filter(Boolean),
+  //       accounts,
+  //     };
 
-      if (res.ok) alert("Profile saved successfully!");
-      else alert("Failed to save profile");
-    } catch (err) {
-      alert("Something went wrong");
-    } finally {
-      setSaving(false);
+  //     const res = await fetch("/api/profile", {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify(payload),
+  //     });
+
+  //     if (res.ok) alert("Profile saved successfully!");
+  //     else alert("Failed to save profile");
+  //   } catch (err) {
+  //     alert("Something went wrong");
+  //   } finally {
+  //     setSaving(false);
+  //   }
+  // };
+  // ✅ UPDATED SAVE HANDLER
+const handleSaveProfile = async () => {
+  if (!session?.user?.email) return;
+
+  // ✅ PHONE VALIDATION
+  if (phoneNumber && !isValidPhone(phoneNumber)) {
+    alert("Phone number must be 10-15 digits long!");
+    return;
+  }
+
+  try {
+    setSaving(true);
+    const payload = {
+      email: session.user.email,
+      firstName,
+      lastName,
+      
+      // ✅ PHONE FORMAT WITH COUNTRY CODE
+      phone: selectedCountry && phoneNumber 
+        ? `${countries.find(c => c.code === selectedCountry).dial} ${phoneNumber}`
+        : phone || "",
+      
+      about,
+      education,
+      experience,
+      skills: skillsText.split(",").map((s) => s.trim()).filter(Boolean),
+      accounts,
+    };
+
+    const res = await fetch("/api/profile", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (res.ok) {
+      alert("Profile saved successfully!");
+      // Optional: Refresh page
+      window.location.reload();
+    } else {
+      alert("Failed to save profile");
     }
-  };
+  } catch (err) {
+    alert("Something went wrong");
+  } finally {
+    setSaving(false);
+  }
+};
+
 
   // RESUME HANDLERS
   const handleResumeChange = (e) => {
@@ -884,7 +985,7 @@ const handleAutofillFromResume = async () => {
     });
 
     const data = await res.json();
-    console.log("🔍 FULL API RESPONSE: - page.js:887", data);  // Ye add karo!
+    console.log("🔍 FULL API RESPONSE: - page.js:988", data);  // Ye add karo!
 
     if (res.ok && data.extracted) {
       setResumeSuggestions(
@@ -894,7 +995,7 @@ const handleAutofillFromResume = async () => {
       );
       setShowAutofillModal(true);
     } else {
-      console.error("❌ API ERROR: - page.js:897", data);
+      console.error("❌ API ERROR: - page.js:998", data);
       alert(JSON.stringify(data, null, 2));  // Full error dikhao
     }
   } catch (err) {
@@ -996,33 +1097,88 @@ const applyResumeAutofill = () => {
 
   return (
     <>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50 to-sky-50 py-12 px-4 lg:px-8">
-        <div className="max-w-5xl mx-auto space-y-12">
+     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50 to-sky-50 py-12 px-4 lg:px-8">
+      <div className="max-w-5xl mx-auto space-y-12">
 
-          {/* HERO HEADER */}
-          <div className="relative overflow-hidden rounded-3xl bg-white/80 backdrop-blur-2xl shadow-2xl border border-white/50 p-10 lg:p-16">
-            <div className="absolute inset-0 bg-gradient-to-br from-indigo-100/20 via-transparent to-sky-100/20" />
-            <div className="relative flex flex-col lg:flex-row items-center gap-10">
-              <div className="relative">
-                <img
-                  src={session.user.image || "/default-avatar.png"}
-                  alt={session.user.name}
-                  className="w-40 h-40 rounded-3xl object-cover ring-8 ring-white/70 shadow-2xl border-4 border-white"
-                />
-                <div className="absolute -bottom-3 -right-3 w-14 h-14 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-2xl flex items-center justify-center shadow-2xl ring-4 ring-white">
-                  <TrendingUp className="w-7 h-7 text-white" />
-                </div>
+        {/* ✅ WELCOME SECTION */}
+        <div className="text-center">
+          <h1 className="text-5xl lg:text-6xl font-extrabold bg-gradient-to-r from-slate-900 via-indigo-800 to-sky-900 bg-clip-text text-transparent mb-6">
+            Complete Your Profile
+          </h1>
+          <p className="text-xl text-slate-600 max-w-2xl mx-auto leading-relaxed">
+            Add your personal information, resume, experience, and skills to get started with job applications.
+          </p>
+        </div>
+
+
+
+        {/* PERSONAL INFO - STARTS IMMEDIATELY 👇 */}
+          <section className="bg-white/80 backdrop-blur-2xl rounded-3xl shadow-2xl border border-white/50 p-10">
+            <div className="flex items-center gap-5 mb-10">
+              <div className="w-16 h-16 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-3xl shadow-xl flex items-center justify-center">
+                <Users className="w-8 h-8 text-white" />
               </div>
-              <div className="text-center lg:text-left">
-                <h1 className="text-5xl lg:text-6xl font-extrabold bg-gradient-to-r from-slate-900 via-indigo-800 to-sky-900 bg-clip-text text-transparent mb-4">
-                  {session.user.name}
-                </h1>
-                <p className="text-xl font-medium text-slate-600 bg-white/60 backdrop-blur-sm px-6 py-3 rounded-2xl inline-block border border-slate-200/50">
-                  {session.user.email}
-                </p>
-              </div>
+              <h2 className="text-4xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
+                Personal Info
+              </h2>
             </div>
-          </div>
+          
+            <div className="grid md:grid-cols-3 gap-6">
+              <input
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                placeholder="First Name"
+                className="p-6 rounded-2xl bg-white/60 backdrop-blur-md border-2 border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100/50 text-lg font-medium placeholder-slate-400 transition-all shadow-inner hover:shadow-lg"
+              />
+              <input
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                placeholder="Last Name"
+                className="p-6 rounded-2xl bg-white/60 backdrop-blur-md border-2 border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100/50 text-lg font-medium placeholder-slate-400 transition-all shadow-inner hover:shadow-lg"
+              />
+              
+              {/* ✅ FIXED PHONE INPUT - COMPACT UI */}
+              <div className="md:col-span-1 relative group">
+                <div className="flex rounded-2xl bg-white/60 backdrop-blur-md border-2 border-slate-200 focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-100/50 shadow-inner hover:shadow-lg transition-all overflow-hidden">
+                  
+                  {/* Country Dropdown - Smaller */}
+                  <select
+                    value={selectedCountry}
+                    onChange={(e) => setSelectedCountry(e.target.value)}
+                    className="px-3 py-5 bg-transparent border-r border-slate-200 text-base font-medium text-slate-700 focus:outline-none appearance-none cursor-pointer min-w-[100px]"
+                  >
+                    {countries.map((country) => (
+                      <option key={country.code} value={country.code}>
+                        {country.dial}
+                      </option>
+                    ))}
+                  </select>
+                  
+                  {/* Phone Number - Compact */}
+                  <input
+                    value={phoneNumber}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, "");
+                      setPhoneNumber(value);
+                    }}
+                    placeholder="3001234567"
+                    maxLength={15}
+                    className="flex-1 p-5 text-base font-medium text-slate-700 placeholder-slate-400 focus:outline-none bg-transparent px-3"
+                  />
+                </div>
+                
+                {/* Error - Smaller & Positioned */}
+                {phoneNumber && !isValidPhone(phoneNumber) && (
+                  <p className="mt-1 text-xs text-red-500 text-right -mb-1">
+                    10-15 digits required
+                  </p>
+                )}
+              </div>
+
+            </div>
+          </section>
+
+          
 
           {/* RESUME SECTION */}
           <section className="bg-white/80 backdrop-blur-2xl rounded-3xl shadow-2xl border border-white/50 p-10">
@@ -1303,66 +1459,56 @@ const applyResumeAutofill = () => {
         </div>
       )}
 
+      {showAutofillModal && resumeSuggestions && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-6">
+          <div className="bg-white rounded-3xl max-w-xl w-full p-8 shadow-2xl">
+            <h3 className="text-2xl font-bold mb-6">
+              We found these details from your resume. Apply?
+            </h3>
 
-
-
-
-{showAutofillModal && resumeSuggestions && (
-  <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-6">
-    <div className="bg-white rounded-3xl max-w-xl w-full p-8 shadow-2xl">
-      <h3 className="text-2xl font-bold mb-6">
-        We found these details from your resume. Apply?
-      </h3>
-
-      <div className="space-y-4 max-h-80 overflow-auto">
-        {Object.entries(resumeSuggestions).map(([key, obj]) => (
-          <label key={key} className="flex items-start gap-3">
-            <input
-              type="checkbox"
-              checked={obj.checked}
-              onChange={(e) =>
-                setResumeSuggestions((prev) => ({
-                  ...prev,
-                  [key]: { ...prev[key], checked: e.target.checked },
-                }))
-              }
-              className="mt-1"
-            />
-            <div>
-              <p className="font-semibold capitalize">{key}</p>
-              <p className="text-sm text-slate-600">
-                {Array.isArray(obj.value)
-                  ? JSON.stringify(obj.value)
-                  : String(obj.value)}
-              </p>
+            <div className="space-y-4 max-h-80 overflow-auto">
+              {Object.entries(resumeSuggestions).map(([key, obj]) => (
+                <label key={key} className="flex items-start gap-3">
+                  <input
+                    type="checkbox"
+                    checked={obj.checked}
+                    onChange={(e) =>
+                      setResumeSuggestions((prev) => ({
+                        ...prev,
+                        [key]: { ...prev[key], checked: e.target.checked },
+                      }))
+                    }
+                    className="mt-1"
+                  />
+                  <div>
+                    <p className="font-semibold capitalize">{key}</p>
+                    <p className="text-sm text-slate-600">
+                      {Array.isArray(obj.value)
+                        ? JSON.stringify(obj.value)
+                        : String(obj.value)}
+                    </p>
+                  </div>
+                </label>
+              ))}
             </div>
-          </label>
-        ))}
-      </div>
 
-      <div className="flex justify-end gap-4 mt-8">
-        <button
-          onClick={() => setShowAutofillModal(false)}
-          className="px-6 py-3 rounded-xl border font-semibold"
-        >
-          Cancel
-        </button>
-        <button
-          onClick={applyResumeAutofill}
-          className="px-6 py-3 rounded-xl bg-indigo-600 text-white font-bold"
-        >
-          Apply
-        </button>
-      </div>
-    </div>
-  </div>
-)}
-
-
-
-
-
-
+            <div className="flex justify-end gap-4 mt-8">
+              <button
+                onClick={() => setShowAutofillModal(false)}
+                className="px-6 py-3 rounded-xl border font-semibold"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={applyResumeAutofill}
+                className="px-6 py-3 rounded-xl bg-indigo-600 text-white font-bold"
+              >
+                Apply
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </>
   );

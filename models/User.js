@@ -36,6 +36,9 @@ const AccountSchema = new mongoose.Schema({
 const UserSchema = new mongoose.Schema(
   {
     name: String,
+    firstName: String,
+    lastName: String,    
+    phone: String,
     email: { type: String, unique: true },
     password: String,
     image: String,

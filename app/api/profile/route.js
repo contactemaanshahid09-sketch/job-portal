@@ -31,6 +31,10 @@ export async function POST(req) {
     experience: body.experience || [],
     skills: body.skills || [],
     accounts: body.accounts || [],
+
+    firstName: body.firstName || "",
+    lastName: body.lastName || "",
+    phone: body.phone || "",
   };
 
   const user = await User.findOneAndUpdate(
