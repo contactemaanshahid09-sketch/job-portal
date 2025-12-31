@@ -281,7 +281,6 @@ export default function PublicProfile() {
                             }}
                             className="w-full flex items-center justify-center gap-3 px-8 py-5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold rounded-2xl shadow-2xl hover:shadow-3xl transition-all text-lg transform hover:scale-[1.02]"
                           >
-                            {/* 🌐 Message {profile.name} */}
                             🌐 Message Candidate
                           </button>
                         )}

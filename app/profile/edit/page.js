@@ -699,21 +699,21 @@ export default function ProfilePage() {
   const [lastName, setLastName] = useState("");
   const [phone, setPhone] = useState("");
 
-  const [selectedCountry, setSelectedCountry] = useState("PK"); // Default Pakistan
-  const [phoneNumber, setPhoneNumber] = useState(""); // Sirf numbers
+  const [selectedCountry, setSelectedCountry] = useState("PK"); 
+  const [phoneNumber, setPhoneNumber] = useState("");
 
-  // Countries list (top mein add karo)
-const countries = [
-  { code: "PK", name: "Pakistan", dial: "+92" },
-  { code: "US", name: "United States", dial: "+1" },
-  { code: "UK", name: "United Kingdom", dial: "+44" },
-  { code: "SA", name: "Saudi Arabia", dial: "+966" },
-  { code: "AE", name: "UAE", dial: "+971" },
-  { code: "CA", name: "Canada", dial: "+1" },
-  { code: "IN", name: "India", dial: "+91" },
-];
 
-// Phone validation
+  const countries = [
+    { code: "PK", name: "Pakistan", dial: "+92" },
+    { code: "US", name: "United States", dial: "+1" },
+    { code: "UK", name: "United Kingdom", dial: "+44" },
+    { code: "SA", name: "Saudi Arabia", dial: "+966" },
+    { code: "AE", name: "UAE", dial: "+971" },
+    { code: "CA", name: "Canada", dial: "+1" },
+    { code: "IN", name: "India", dial: "+91" },
+  ];
+
+
 const isValidPhone = (number) => /^\d{10,15}$/.test(number);
 
   
@@ -759,26 +759,24 @@ const isValidPhone = (number) => /^\d{10,15}$/.test(number);
         
         setFirstName(data.firstName || "");
         setLastName(data.lastName || "");
-        // setPhone(data.phone || "");
-         // ✅ PHONE PARSE LOGIC - YE REPLACE KARO
-    if (data.phone) {
-      const phoneMatch = data.phone.match(/^\+(\d{1,4})\s?(.+)$/);
-      if (phoneMatch) {
-        const [, countryCode, number] = phoneMatch;
-        const country = countries.find(c => c.dial === `+${countryCode}`);
-        if (country) {
-          setSelectedCountry(country.code);
-          setPhoneNumber(number.trim());
-        } else {
-          setPhoneNumber(data.phone.replace(/\D/g, ""));
-        }
-      } else {
-        setPhoneNumber(data.phone.replace(/\D/g, ""));
-      }
-    } else {
-      setSelectedCountry("PK");
-      setPhoneNumber("");
-    }
+          if (data.phone) {
+            const phoneMatch = data.phone.match(/^\+(\d{1,4})\s?(.+)$/);
+            if (phoneMatch) {
+              const [, countryCode, number] = phoneMatch;
+              const country = countries.find(c => c.dial === `+${countryCode}`);
+              if (country) {
+                setSelectedCountry(country.code);
+                setPhoneNumber(number.trim());
+              } else {
+                setPhoneNumber(data.phone.replace(/\D/g, ""));
+              }
+            } else {
+              setPhoneNumber(data.phone.replace(/\D/g, ""));
+            }
+          } else {
+            setSelectedCountry("PK");
+            setPhoneNumber("");
+          }
         
         setEducation(data.education || []);
         setExperience(data.experience || []);
@@ -800,11 +798,11 @@ const isValidPhone = (number) => /^\d{10,15}$/.test(number);
               setResumePreviewUrl(url);
             }
           } catch (e) {
-            console.error("Preview load error - page.js:803", e);
+            console.error("Preview load error - page.js:801", e);
           }
         }
       } catch (err) {
-        console.error("Profile load error - page.js:807", err);
+        console.error("Profile load error - page.js:805", err);
       } finally {
         setLoading(false);
       }
@@ -813,44 +811,11 @@ const isValidPhone = (number) => /^\d{10,15}$/.test(number);
     fetchProfile();
   }, [status, router, session?.user?.email]);
 
-  // // SAVE PROFILE
-  // const handleSaveProfile = async () => {
-  //   if (!session?.user?.email) return;
-  //   try {
-  //     setSaving(true);
-  //     const payload = {
-  //       email: session.user.email,
 
-  //       firstName,
-  //       lastName,
-  //       phone,
-        
-  //       about,
-  //       education,
-  //       experience,
-  //       skills: skillsText.split(",").map((s) => s.trim()).filter(Boolean),
-  //       accounts,
-  //     };
-
-  //     const res = await fetch("/api/profile", {
-  //       method: "POST",
-  //       headers: { "Content-Type": "application/json" },
-  //       body: JSON.stringify(payload),
-  //     });
-
-  //     if (res.ok) alert("Profile saved successfully!");
-  //     else alert("Failed to save profile");
-  //   } catch (err) {
-  //     alert("Something went wrong");
-  //   } finally {
-  //     setSaving(false);
-  //   }
-  // };
-  // ✅ UPDATED SAVE HANDLER
 const handleSaveProfile = async () => {
   if (!session?.user?.email) return;
 
-  // ✅ PHONE VALIDATION
+
   if (phoneNumber && !isValidPhone(phoneNumber)) {
     alert("Phone number must be 10-15 digits long!");
     return;
@@ -863,7 +828,7 @@ const handleSaveProfile = async () => {
       firstName,
       lastName,
       
-      // ✅ PHONE FORMAT WITH COUNTRY CODE
+    
       phone: selectedCountry && phoneNumber 
         ? `${countries.find(c => c.code === selectedCountry).dial} ${phoneNumber}`
         : phone || "",
@@ -883,7 +848,6 @@ const handleSaveProfile = async () => {
 
     if (res.ok) {
       alert("Profile saved successfully!");
-      // Optional: Refresh page
       window.location.reload();
     } else {
       alert("Failed to save profile");
@@ -975,7 +939,7 @@ const handleSaveProfile = async () => {
 
 
 
-// page.js mein handleAutofillFromResume
+
 const handleAutofillFromResume = async () => {
   try {
     const res = await fetch("/api/profile/resume/parse", {
@@ -985,7 +949,7 @@ const handleAutofillFromResume = async () => {
     });
 
     const data = await res.json();
-    console.log("🔍 FULL API RESPONSE: - page.js:988", data);  // Ye add karo!
+    console.log("🔍 FULL API RESPONSE: - page.js:952", data);  
 
     if (res.ok && data.extracted) {
       setResumeSuggestions(
@@ -995,8 +959,8 @@ const handleAutofillFromResume = async () => {
       );
       setShowAutofillModal(true);
     } else {
-      console.error("❌ API ERROR: - page.js:998", data);
-      alert(JSON.stringify(data, null, 2));  // Full error dikhao
+      console.error("API ERROR: - page.js:962", data);
+      alert(JSON.stringify(data, null, 2));
     }
   } catch (err) {
     alert("Network error: " + err.message);
@@ -1100,7 +1064,7 @@ const applyResumeAutofill = () => {
      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50 to-sky-50 py-12 px-4 lg:px-8">
       <div className="max-w-5xl mx-auto space-y-12">
 
-        {/* ✅ WELCOME SECTION */}
+        {/*  WELCOME SECTION */}
         <div className="text-center">
           <h1 className="text-5xl lg:text-6xl font-extrabold bg-gradient-to-r from-slate-900 via-indigo-800 to-sky-900 bg-clip-text text-transparent mb-6">
             Complete Your Profile
@@ -1112,7 +1076,7 @@ const applyResumeAutofill = () => {
 
 
 
-        {/* PERSONAL INFO - STARTS IMMEDIATELY 👇 */}
+        {/* PERSONAL INFO */}
           <section className="bg-white/80 backdrop-blur-2xl rounded-3xl shadow-2xl border border-white/50 p-10">
             <div className="flex items-center gap-5 mb-10">
               <div className="w-16 h-16 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-3xl shadow-xl flex items-center justify-center">
@@ -1137,11 +1101,11 @@ const applyResumeAutofill = () => {
                 className="p-6 rounded-2xl bg-white/60 backdrop-blur-md border-2 border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100/50 text-lg font-medium placeholder-slate-400 transition-all shadow-inner hover:shadow-lg"
               />
               
-              {/* ✅ FIXED PHONE INPUT - COMPACT UI */}
+              {/*  PHONE INPUT  */}
               <div className="md:col-span-1 relative group">
                 <div className="flex rounded-2xl bg-white/60 backdrop-blur-md border-2 border-slate-200 focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-100/50 shadow-inner hover:shadow-lg transition-all overflow-hidden">
                   
-                  {/* Country Dropdown - Smaller */}
+              
                   <select
                     value={selectedCountry}
                     onChange={(e) => setSelectedCountry(e.target.value)}
@@ -1154,7 +1118,7 @@ const applyResumeAutofill = () => {
                     ))}
                   </select>
                   
-                  {/* Phone Number - Compact */}
+                  
                   <input
                     value={phoneNumber}
                     onChange={(e) => {
@@ -1167,7 +1131,7 @@ const applyResumeAutofill = () => {
                   />
                 </div>
                 
-                {/* Error - Smaller & Positioned */}
+              
                 {phoneNumber && !isValidPhone(phoneNumber) && (
                   <p className="mt-1 text-xs text-red-500 text-right -mb-1">
                     10-15 digits required
@@ -1275,20 +1239,14 @@ const applyResumeAutofill = () => {
                     <Trash2 className="w-5 h-5" />
                     Delete
                   </button>
-                  
 
-
-<button
-  onClick={handleAutofillFromResume}
-  disabled={!resumeMeta}
-  className="mt-4 w-full py-4 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold rounded-2xl shadow-xl hover:shadow-2xl disabled:opacity-50 transition-all"
->
-   Auto-fill Profile from Resume
-</button>
-
-
-
-
+                  <button
+                    onClick={handleAutofillFromResume}
+                    disabled={!resumeMeta}
+                    className="mt-4 w-full py-4 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold rounded-2xl shadow-xl hover:shadow-2xl disabled:opacity-50 transition-all"
+                  >
+                    Auto-fill Profile from Resume
+                  </button>
                 </div>
               </div>
             </div>
