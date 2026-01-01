@@ -90,7 +90,6 @@
 import connectDB from "@/lib/mongoose";
 import User from "@/models/User";
 
-// Ensure DB connection is ready
 await connectDB();
 
 export async function POST(req) {
@@ -153,7 +152,7 @@ export async function POST(req) {
       { status: 200 }
     );
   } catch (error) {
-    console.error("Resume upload error:", error);
+    console.error("Resume upload error: - route.js:155", error);
     return Response.json(
       { message: "Upload failed. Please try again." },
       { status: 500 }
@@ -166,6 +165,8 @@ export async function GET(req) {
     const { searchParams } = new URL(req.url);
     const email = searchParams.get("email");
 
+    const mode = searchParams.get("mode");  // 🔥 NEW: preview or download
+
     if (!email) {
       return new Response("Missing email", { status: 400 });
     }
@@ -176,21 +177,33 @@ export async function GET(req) {
       return new Response("No resume found", { status: 404 });
     }
 
+    // const headers = new Headers({
+    //   "Content-Type": user.resume.mimeType || "application/octet-stream",
+    //   "Content-Disposition": `attachment; filename="${encodeURIComponent(
+    //     user.resume.originalName
+    //   )}"`,
+    //   "Content-Length": user.resume.data.length.toString(),
+    //   "Cache-Control": "no-cache",
+    // });
     const headers = new Headers({
       "Content-Type": user.resume.mimeType || "application/octet-stream",
-      "Content-Disposition": `attachment; filename="${encodeURIComponent(
-        user.resume.originalName
-      )}"`,
       "Content-Length": user.resume.data.length.toString(),
       "Cache-Control": "no-cache",
     });
+    // 🔥 FIX: Conditional download header
+    if (mode === "download") {
+      headers.set("Content-Disposition", `attachment; filename="${encodeURIComponent(user.resume.originalName)}"`);
+    }
+    // Preview: No attachment header = normal file display
+
+
 
     return new Response(user.resume.data, {
       status: 200,
       headers,
     });
   } catch (error) {
-    console.error("Resume fetch error:", error);
+    console.error("Resume fetch error: - route.js:206", error);
     return new Response("Server error", { status: 500 });
   }
 }
@@ -215,7 +228,7 @@ export async function DELETE(req) {
 
     return Response.json({ message: "Resume deleted successfully" }, { status: 200 });
   } catch (error) {
-    console.error("Resume delete error:", error);
+    console.error("Resume delete error: - route.js:231", error);
     return Response.json({ message: "Delete failed" }, { status: 500 });
   }
 }

@@ -53,6 +53,7 @@ export default function PublicProfile() {
     skills: true,
     education: true,
     experience: true,
+    resume: true,  // ← Add this line
   });
 
   const isOwner = session?.user?.email === profile?.email;
@@ -77,14 +78,14 @@ export default function PublicProfile() {
 
         if (data.resume?.originalName) {
           try {
-            const previewRes = await fetch(`/api/profile/resume?email=${encodeURIComponent(emailToFetch)}`);
-            if (previewRes.ok) {
-              const blob = await previewRes.blob();
-              setResumePreviewUrl(URL.createObjectURL(blob));
-            }
-          } catch (e) {
-            console.error("Preview error", e);
-          }
+            const previewRes = await fetch(`/api/profile/resume?email=${encodeURIComponent(emailToFetch)}&mode=preview`);
+    if (previewRes.ok) {
+      const blob = await previewRes.blob();
+      setResumePreviewUrl(URL.createObjectURL(blob));
+    }
+  } catch (e) {
+    console.error("Preview error", e);
+  }
         }
       } catch (err) {
         console.error(err);
@@ -311,8 +312,12 @@ export default function PublicProfile() {
         {/* Content Based on Active Tab */}
         {activeTab === "overview" && (
           <>
+
+
+
+
             {/* Resume Section */}
-            {profile.resume && (
+            {/* {profile.resume && (
               <section className="bg-white/80 backdrop-blur-2xl rounded-3xl shadow-2xl border border-white/50 p-10 mb-8">
                 <div className="flex items-center justify-between mb-8">
                   <div className="flex items-center gap-5">
@@ -376,7 +381,97 @@ export default function PublicProfile() {
                   </>
                 )}
               </section>
-            )}
+            )} */}
+          {/* Resume Section - FIXED NO AUTO DOWNLOAD */}
+{profile.resume && (
+  <section className="bg-white/80 backdrop-blur-2xl rounded-3xl shadow-2xl border border-white/50 p-10 mb-8">
+    <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center gap-5">
+        <div className="w-16 h-16 bg-gradient-to-r from-orange-500 to-red-500 rounded-3xl flex items-center justify-center shadow-xl">
+          <Briefcase className="w-8 h-8 text-white" />
+        </div>
+        <h2 className="text-4xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
+          Resume
+        </h2>
+      </div>
+      <button
+        onClick={() => toggleSection('resume')}
+        className="text-slate-500 hover:text-slate-700"
+      >
+        {expandedSections.resume ? <ChevronUp className="w-6 h-6" /> : <ChevronDown className="w-6 h-6" />}
+      </button>
+    </div>
+
+    {expandedSections.resume !== false && (
+      <>
+        <div className="grid md:grid-cols-2 gap-8 items-center mb-6">
+          <div className="bg-gradient-to-br from-slate-50 to-indigo-50 rounded-2xl p-6 border border-slate-200">
+            <p className="text-lg font-semibold text-slate-800 mb-2">
+              {profile.resume.originalName}
+            </p>
+            <p className="text-sm text-slate-500 flex items-center gap-2">
+              <Calendar className="w-4 h-4" />
+              Uploaded {new Date(profile.resume.uploadedAt).toLocaleDateString()}
+            </p>
+          </div>
+
+          {/* 🔥 FIXED: Button instead of <a> tag */}
+          <div className="flex gap-4 justify-end">
+            <button
+              onClick={async () => {
+                try {
+                  // const response = await fetch(`/api/profile/resume?email=${encodeURIComponent(profile.email)}`);
+                  const response = await fetch(`/api/profile/resume?email=${encodeURIComponent(profile.email)}&mode=download`);
+                  const blob = await response.blob();
+                  const url = URL.createObjectURL(blob);
+                  const link = document.createElement('a');
+                  link.href = url;
+                  link.download = profile.resume.originalName;
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                  URL.revokeObjectURL(url);
+                } catch (error) {
+                  console.error('Download failed:', error);
+                  alert('Download failed. Please try again.');
+                }
+              }}
+              className="px-8 py-4 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold rounded-2xl shadow-xl hover:shadow-2xl transition-all flex items-center gap-3"
+            >
+              <Download className="w-5 h-5" />
+              Download Resume
+            </button>
+          </div>
+        </div>
+
+        {resumePreviewUrl && (
+          <div className="mt-8 flex justify-center">
+            <div className="w-full max-w-2xl bg-gradient-to-br from-slate-100 to-indigo-50 rounded-3xl shadow-2xl overflow-hidden border border-white/60 p-8">
+              {profile.resume.mimeType?.startsWith("image/") ? (
+                <img src={resumePreviewUrl} alt="Resume" className="w-full h-auto object-contain rounded-2xl" />
+              ) : (
+                <div className="flex flex-col items-center justify-center h-64 text-center">
+                  <FileText className="w-32 h-32 text-indigo-600 mb-6" />
+                  <span className="text-2xl font-bold text-slate-700">
+                    {getFileIcon(profile.resume.mimeType, profile.resume.originalName)}
+                  </span>
+                  <p className="text-slate-600 mt-4">Click Download to view full document</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </>
+    )}
+  </section>
+)}
+
+
+
+
+
+
+
 
             {/* About Me */}
             {profile.about && (

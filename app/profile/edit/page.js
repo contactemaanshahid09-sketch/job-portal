@@ -755,6 +755,13 @@ const isValidPhone = (number) => /^\d{10,15}$/.test(number);
         if (!res.ok) return;
         const data = await res.json();
 
+
+
+
+
+
+
+
         setAbout(data.about || "");
         
         setFirstName(data.firstName || "");
@@ -783,26 +790,54 @@ const isValidPhone = (number) => /^\d{10,15}$/.test(number);
         setSkillsText((data.skills || []).join(", "));
         setAccounts(data.accounts || []);
 
-        if (data.resume?.originalName) {
+  //       if (data.resume?.originalName) {
+  //         setResumeMeta({
+  //           originalName: data.resume.originalName,
+  //           uploadedAt: data.resume.uploadedAt,
+  //           mimeType: data.resume.mimeType,
+  //         });
+
+  //         try {
+  //           const previewRes = await fetch(`/api/profile/resume?email=${encodeURIComponent(session.user.email)}`);
+  //           if (previewRes.ok) {
+  //             const blob = await previewRes.blob();
+  //             const url = URL.createObjectURL(blob);
+  //             setResumePreviewUrl(url);
+  //           }
+  //         } catch (e) {
+  //           console.error("Preview load error - page.js:808", e);
+  //         }
+  //       }
+  //     } catch (err) {
+  //       console.error("Profile load error - page.js:812", err);
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
+
+  //   fetchProfile();
+  // }, [status, router, session?.user?.email]);
+  if (data.resume?.originalName) {
           setResumeMeta({
             originalName: data.resume.originalName,
             uploadedAt: data.resume.uploadedAt,
             mimeType: data.resume.mimeType,
           });
 
+          // 🔥 FIXED: mode=preview
           try {
-            const previewRes = await fetch(`/api/profile/resume?email=${encodeURIComponent(session.user.email)}`);
+            const previewRes = await fetch(`/api/profile/resume?email=${encodeURIComponent(session.user.email)}&mode=preview`);
             if (previewRes.ok) {
               const blob = await previewRes.blob();
               const url = URL.createObjectURL(blob);
               setResumePreviewUrl(url);
             }
           } catch (e) {
-            console.error("Preview load error - page.js:801", e);
+            console.error("Preview load error - page.js:836", e);
           }
         }
       } catch (err) {
-        console.error("Profile load error - page.js:805", err);
+        console.error("Profile load error - page.js:840", err);
       } finally {
         setLoading(false);
       }
@@ -810,6 +845,10 @@ const isValidPhone = (number) => /^\d{10,15}$/.test(number);
 
     fetchProfile();
   }, [status, router, session?.user?.email]);
+
+
+
+  
 
 
 const handleSaveProfile = async () => {
@@ -886,7 +925,8 @@ const handleSaveProfile = async () => {
       setResumeFile(null);
 
       // Refresh preview
-      const previewRes = await fetch(`/api/profile/resume?email=${encodeURIComponent(session.user.email)}`);
+      // const previewRes = await fetch(`/api/profile/resume?email=${encodeURIComponent(session.user.email)}`);
+      const previewRes = await fetch(`/api/profile/resume?email=${encodeURIComponent(session.user.email)}&mode=preview`);
       if (previewRes.ok) {
         const blob = await previewRes.blob();
         setResumePreviewUrl(URL.createObjectURL(blob));
@@ -901,7 +941,7 @@ const handleSaveProfile = async () => {
   const handleDownloadResume = async () => {
     if (!session?.user?.email) return;
     try {
-      const res = await fetch(`/api/profile/resume?email=${encodeURIComponent(session.user.email)}`);
+      const res = await fetch(`/api/profile/resume?email=${encodeURIComponent(session.user.email)}&mode=download`);
       if (!res.ok) throw new Error();
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
@@ -949,7 +989,7 @@ const handleAutofillFromResume = async () => {
     });
 
     const data = await res.json();
-    console.log("🔍 FULL API RESPONSE: - page.js:952", data);  
+    console.log("🔍 FULL API RESPONSE: - page.js:992", data);  
 
     if (res.ok && data.extracted) {
       setResumeSuggestions(
@@ -959,7 +999,7 @@ const handleAutofillFromResume = async () => {
       );
       setShowAutofillModal(true);
     } else {
-      console.error("API ERROR: - page.js:962", data);
+      console.error("API ERROR: - page.js:1002", data);
       alert(JSON.stringify(data, null, 2));
     }
   } catch (err) {
